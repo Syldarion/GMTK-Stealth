@@ -116,28 +116,41 @@ public class FloorGenerator : MonoBehaviour
         List<BSPRoom> rooms = new List<BSPRoom>();
         root_room.Split(Degree, ref rooms);
 
-        rooms.Add(new BSPRoom(new Vector2(-2, -2), FloorSize + new Vector2(4, 4), 0));
+        rooms.Add(root_room);
 
-        foreach(BSPRoom room in rooms)
+        //0 floor, 1 wall
+        int[,] tile_map = new int[(int)FloorSize.x, (int)FloorSize.y];
+
+        foreach (BSPRoom room in rooms)
         {
-            Vector3 room_start = new Vector3(room.Position.x, 0.0f, room.Position.y);
+            int top = (int)room.Position.y;
+            int bottom = top + (int)room.Size.y - 1;
+            int left = (int)room.Position.x;
+            int right = left + (int)room.Size.x - 1;
 
-            for(int x = 0; x < room.Size.x; x++)
+            for (int x = 0; x < room.Size.x; x++)
             {
-                Vector3 top_wall_pos = room_start + new Vector3(x, 0.0f, 0.0f);
-                Vector3 bot_wall_pos = room_start + new Vector3(x, 0.0f, room.Size.y - 1);
-
-                GameObject wall = Instantiate(WallPrefab, top_wall_pos, Quaternion.identity);
-                wall = Instantiate(WallPrefab, bot_wall_pos, Quaternion.identity);
+                tile_map[left + x, top] = 1;
+                tile_map[left + x, bottom] = 1;
             }
 
             for (int y = 1; y < room.Size.y - 1; y++)
             {
-                Vector3 left_wall_pos = room_start + new Vector3(0.0f, 0.0f, y);
-                Vector3 right_wall_pos = room_start + new Vector3(room.Size.x - 1, 0.0f, y);
+                tile_map[left, top + y] = 1;
+                tile_map[right, top + y] = 1;
+            }
+        }
 
-                GameObject wall = Instantiate(WallPrefab, left_wall_pos, Quaternion.identity);
-                wall = Instantiate(WallPrefab, right_wall_pos, Quaternion.identity);
+        for(int x = 0; x < FloorSize.x; x++)
+        {
+            for(int y = 0; y < FloorSize.y; y++)
+            {
+                Vector3 tile_pos = new Vector3(x, 0.0f, y);
+
+                GameObject tile = Instantiate(
+                    tile_map[x, y] == 0 ? FloorPrefab : WallPrefab, 
+                    tile_pos, Quaternion.identity);
+                tile.transform.SetParent(transform, true);
             }
         }
     }

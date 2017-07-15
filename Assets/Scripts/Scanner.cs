@@ -10,10 +10,17 @@ public class Scanner : MonoBehaviour
     public float ScanDistance;
     public float MinScanDistance;
     public float MaxScanDistance;
-    public float ScanGrowthFactor;
+    public float ScanGrowthSpeed;
+    public float ScanDecaySpeed;
 
     private Camera mainCamera;
+    private IsoFollowCamera followCamera;
     private bool scanning;
+
+    void Awake()
+    {
+        followCamera = GetComponent<IsoFollowCamera>();
+    }
 
     void Start()
     {
@@ -23,11 +30,13 @@ public class Scanner : MonoBehaviour
     void Update()
     {
         if (Input.GetKey(KeyCode.Space))
-            ScanDistance += ScanGrowthFactor * Time.deltaTime;
+            ScanDistance += ScanGrowthSpeed * Time.deltaTime;
         else
-            ScanDistance -= ScanGrowthFactor * Time.deltaTime;
+            ScanDistance -= ScanDecaySpeed * Time.deltaTime;
 
         ScanDistance = Mathf.Clamp(ScanDistance, MinScanDistance, MaxScanDistance);
+        
+        followCamera.FollowHeight = 2.0f + (ScanDistance - MinScanDistance) * 1.6f;
     }
 
     void OnEnable()

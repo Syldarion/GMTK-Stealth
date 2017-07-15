@@ -4,7 +4,9 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    public Scanner sightScanner;
+    public Scanner SightScanner;
+
+    public float MoveSpeed;
 
     void Start()
     {
@@ -13,6 +15,19 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-        sightScanner.ScanOrigin = transform.position;
+        Movement();
+        SightScanner.ScanOrigin = transform.position;
+    }
+
+    void Movement()
+    {
+        Vector3 movement = new Vector3(
+            Input.GetAxis("Horizontal"), 
+            0.0f, 
+            Input.GetAxis("Vertical"));
+
+        movement *= MoveSpeed * Time.deltaTime;
+
+        transform.Translate(movement);
     }
 }
