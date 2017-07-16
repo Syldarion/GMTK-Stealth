@@ -24,7 +24,9 @@ public class BSPRoom
 
     public void Split(int maxDegree, ref List<BSPRoom> rooms)
     {
-        if (Degree >= maxDegree || (Degree > 2 && Random.value >= 0.8f)) return;
+        float split_chance = 0.75f + (maxDegree - Degree) * 0.1f;
+
+        if (Degree >= maxDegree || Random.value >= split_chance) return;
 
         bool can_split_vert = Size.x > 2 * FloorGenerator.MinRoomSize.x + 3;
         bool can_split_hori = Size.y > 2 * FloorGenerator.MinRoomSize.y + 3;
@@ -91,6 +93,8 @@ public class BSPRoom
 
 public class FloorGenerator : MonoBehaviour
 {
+    public static FloorGenerator Instance;
+
     public Vector2 FloorSize;
     public static Vector2 MinRoomSize = new Vector2(5, 5);
     public static float MaxSizeRatio = 0.3f;
@@ -100,9 +104,16 @@ public class FloorGenerator : MonoBehaviour
 
     public int Degree;
 
+    private int[,] tileMap;
+
+    void Awake()
+    {
+        Instance = this;
+    }
+
     void Start()
     {
-        CreateFloor();
+
     }
 
     void Update()
@@ -110,7 +121,23 @@ public class FloorGenerator : MonoBehaviour
 
     }
 
-    public void CreateFloor()
+    //returns random corner for spawn
+    public Vector3 CreateFloor()
+    {
+        CreateTiles(CreateTilemap());
+
+        Vector3[] corners = new Vector3[]
+        {
+            new Vector3(1.0f, 0.0f, 1.0f),
+            new Vector3(1.0f, 0.0f, FloorSize.y - 2),
+            new Vector3(FloorSize.x - 2, 0.0f, 1.0f),
+            new Vector3(FloorSize.x - 2, FloorSize.y - 2)
+        };
+
+        return corners[Random.Range(0, 4)];
+    }
+
+    public int[,] CreateTilemap()
     {
         BSPRoom root_room = new BSPRoom(Vector2.zero, FloorSize, 0);
         List<BSPRoom> rooms = new List<BSPRoom>();
@@ -118,7 +145,6 @@ public class FloorGenerator : MonoBehaviour
 
         rooms.Add(root_room);
 
-        //0 floor, 1 wall
         int[,] tile_map = new int[(int)FloorSize.x, (int)FloorSize.y];
 
         foreach (BSPRoom room in rooms)
@@ -141,17 +167,37 @@ public class FloorGenerator : MonoBehaviour
             }
         }
 
-        for(int x = 0; x < FloorSize.x; x++)
+        tileMap = new int[(int)FloorSize.x, (int)FloorSize.y];
+        System.Array.Copy(tile_map, tileMap, tile_map.Length);
+        return tile_map;
+    }
+
+    public void CreateTiles(int[,] tileMap)
+    {
+        for (int x = 0; x < FloorSize.x; x++)
         {
-            for(int y = 0; y < FloorSize.y; y++)
+            for (int y = 0; y < FloorSize.y; y++)
             {
                 Vector3 tile_pos = new Vector3(x, 0.0f, y);
 
                 GameObject tile = Instantiate(
-                    tile_map[x, y] == 0 ? FloorPrefab : WallPrefab, 
+                    tileMap[x, y] == 0 ? FloorPrefab : WallPrefab,
                     tile_pos, Quaternion.identity);
                 tile.transform.SetParent(transform, true);
             }
         }
+    }
+
+    public void CleanupFloor()
+    {
+        foreach(Transform child in transform)
+        {
+            Destroy(child.gameObject);
+        }
+    }
+
+    public int[,] Tilemap()
+    {
+        return tileMap;
     }
 }
