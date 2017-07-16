@@ -26,7 +26,7 @@ GameObject:
   - component: {fileID: 114491885127669258}
   m_Layer: 8
   m_Name: Enemy
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -124,3 +124,5 @@ MonoBehaviour:
   MoveSpeed: 1
   PatrolSpeed: 1
   AlertedSpeed: 3
+  Questioning: 0
+  Alerted: 0
