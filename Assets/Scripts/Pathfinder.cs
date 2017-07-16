@@ -93,7 +93,7 @@ public class Pathfinder : MonoBehaviour
 
     }
 
-    public List<Vector3> FindPath(Vector2 start, Vector2 end)
+    public List<Vector3> FindPath(Vector3 start, Vector3 end)
     {
         List<PathTile> open = new List<PathTile>();
         List<PathTile> closed = new List<PathTile>();
@@ -103,12 +103,12 @@ public class Pathfinder : MonoBehaviour
             currentLevelTiles.GetLength(1)];
         System.Array.Copy(currentLevelTiles, pathTiles, currentLevelTiles.Length);
 
-        open.Add(pathTiles[(int)start.x, (int)start.y]);
+        open.Add(pathTiles[(int)start.x, (int)start.z]);
         open[0].SetScore(
             0,
             (int)Vector2.Distance(start, end));
 
-        PathTile target_tile = pathTiles[(int)end.x, (int)end.y];
+        PathTile target_tile = pathTiles[(int)end.x, (int)end.z];
 
         while (!closed.Contains(target_tile) && open.Count > 0)
         {
@@ -152,7 +152,7 @@ public class Pathfinder : MonoBehaviour
         PathTile current = target_tile;
         while(current.Parent != null)
         {
-            path.Add(new Vector3(current.X, 0.0f, current.Y));
+            path.Add(new Vector3(current.X, start.y, current.Y));
             current = current.Parent;
         }
         path.Reverse();

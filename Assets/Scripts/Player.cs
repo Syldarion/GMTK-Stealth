@@ -7,12 +7,15 @@ public class Player : MonoBehaviour
     public static Player Instance;
 
     public Scanner SightScanner;
-
     public float MoveSpeed;
+
+    private bool scanning;
+    private Rigidbody rBody;
 
     void Awake()
     {
         Instance = this;
+        rBody = GetComponent<Rigidbody>();
     }
 
     void Start()
@@ -24,15 +27,13 @@ public class Player : MonoBehaviour
     {
         Movement();
         SightScanner.ScanOrigin = transform.position;
-
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            StartPath();
-        }
+        
     }
 
     void Movement()
     {
+        if (SightScanner.Scanning) return;
+
         Vector3 movement = new Vector3(
             Input.GetAxis("Horizontal"), 
             0.0f, 
@@ -46,7 +47,30 @@ public class Player : MonoBehaviour
     public void StartPath()
     {
         List<Vector3> path = Pathfinder.Instance.FindPath(
-            new Vector2(transform.position.x, transform.position.z),
-            new Vector2(3, 3));
+            transform.position,
+            new Vector3(3, transform.position.y, 3));
+        StartCoroutine(MoveAlongPath(path));
+    }
+
+    public IEnumerator MoveAlongPath(List<Vector3> path)
+    {
+        while(path.Count > 0)
+        {
+            Vector3 movement;
+            Vector3 next_point = path[0];
+
+            while(Vector3.Distance(transform.position, next_point) > 0.1f)
+            {
+                movement = (next_point - transform.position).normalized * MoveSpeed * Time.deltaTime;
+                transform.Translate(movement);
+
+                yield return null;
+            }
+
+            transform.position = path[0];
+            path.RemoveAt(0);
+
+            yield return null;
+        }
     }
 }

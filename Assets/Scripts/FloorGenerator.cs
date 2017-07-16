@@ -96,7 +96,7 @@ public class FloorGenerator : MonoBehaviour
     public static FloorGenerator Instance;
 
     public Vector2 FloorSize;
-    public static Vector2 MinRoomSize = new Vector2(5, 5);
+    public static Vector2 MinRoomSize = new Vector2(4, 4);
     public static float MaxSizeRatio = 0.3f;
 
     public GameObject FloorPrefab;
@@ -143,8 +143,6 @@ public class FloorGenerator : MonoBehaviour
         List<BSPRoom> rooms = new List<BSPRoom>();
         root_room.Split(Degree, ref rooms);
 
-        rooms.Add(root_room);
-
         int[,] tile_map = new int[(int)FloorSize.x, (int)FloorSize.y];
 
         foreach (BSPRoom room in rooms)
@@ -153,7 +151,7 @@ public class FloorGenerator : MonoBehaviour
             int bottom = top + (int)room.Size.y - 1;
             int left = (int)room.Position.x;
             int right = left + (int)room.Size.x - 1;
-
+            
             for (int x = 0; x < room.Size.x; x++)
             {
                 tile_map[left + x, top] = 1;
@@ -165,6 +163,56 @@ public class FloorGenerator : MonoBehaviour
                 tile_map[left, top + y] = 1;
                 tile_map[right, top + y] = 1;
             }
+
+            int door_count = Random.Range(1, 4);
+
+            for(int i = 0; i < door_count; i++)
+            {
+                switch(Random.Range(0, 4))
+                {
+                    //left
+                    case 0:
+                        if (left != 0)
+                            tile_map[left, top + Random.Range(1, bottom - top - 1)] = 0;
+                        else
+                            i--;
+                        break;
+                    //right
+                    case 1:
+                        if (right != FloorSize.x - 1)
+                            tile_map[right, top + Random.Range(1, bottom - top - 1)] = 0;
+                        else
+                            i--;
+                        break;
+                    //top
+                    case 2:
+                        if (top != 0)
+                            tile_map[left + Random.Range(1, right - left - 1), top] = 0;
+                        else
+                            i--;
+                        break;
+                    //bottom
+                    case 3:
+                        if (bottom != FloorSize.y - 1)
+                            tile_map[left + Random.Range(1, right - left - 1), bottom] = 0;
+                        else
+                            i--;
+                        break;
+                }
+            }
+        }
+
+        //Create main border
+        for (int x = 0; x < FloorSize.x; x++)
+        {
+            tile_map[x, 0] = 1;
+            tile_map[x, (int)FloorSize.y - 1] = 1;
+        }
+
+        for (int y = 1; y < FloorSize.y - 1; y++)
+        {
+            tile_map[0, y] = 1;
+            tile_map[(int)FloorSize.x - 1, y] = 1;
         }
 
         tileMap = new int[(int)FloorSize.x, (int)FloorSize.y];

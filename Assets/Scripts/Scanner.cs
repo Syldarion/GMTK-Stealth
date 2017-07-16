@@ -12,10 +12,10 @@ public class Scanner : MonoBehaviour
     public float MaxScanDistance;
     public float ScanGrowthSpeed;
     public float ScanDecaySpeed;
+    public bool Scanning;
 
     private Camera mainCamera;
     private IsoFollowCamera followCamera;
-    private bool scanning;
 
     void Awake()
     {
@@ -30,13 +30,19 @@ public class Scanner : MonoBehaviour
     void Update()
     {
         if (Input.GetKey(KeyCode.Space))
+        {
             ScanDistance += ScanGrowthSpeed * Time.deltaTime;
+            Scanning = true;
+        }
         else
+        {
             ScanDistance -= ScanDecaySpeed * Time.deltaTime;
+            Scanning = false;
+        }
 
         ScanDistance = Mathf.Clamp(ScanDistance, MinScanDistance, MaxScanDistance);
         
-        followCamera.FollowHeight = 2.0f + (ScanDistance - MinScanDistance) * 1.6f;
+        followCamera.FollowHeight = 2.0f + (ScanDistance - MinScanDistance) * 1.8f;
     }
 
     void OnEnable()
@@ -50,6 +56,7 @@ public class Scanner : MonoBehaviour
     {
         EffectMaterial.SetVector("_WorldSpaceScannerPos", ScanOrigin);
         EffectMaterial.SetFloat("_ScanDistance", ScanDistance);
+        EffectMaterial.SetFloat("_ScanlineBoldness", Scanning ? 0.8f : 0.1f);
         RaycastCornerBlit(source, destination, EffectMaterial);
     }
 
