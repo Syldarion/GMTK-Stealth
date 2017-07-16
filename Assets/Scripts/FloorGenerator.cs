@@ -122,19 +122,19 @@ public class FloorGenerator : MonoBehaviour
     }
 
     //returns random corner for spawn
-    public Vector3 CreateFloor()
+    public void CreateFloor()
     {
         CreateTiles(CreateTilemap());
 
-        Vector3[] corners = new Vector3[]
-        {
-            new Vector3(1.0f, 0.0f, 1.0f),
-            new Vector3(1.0f, 0.0f, FloorSize.y - 2),
-            new Vector3(FloorSize.x - 2, 0.0f, 1.0f),
-            new Vector3(FloorSize.x - 2, FloorSize.y - 2)
-        };
+        //Vector3[] corners = new Vector3[]
+        //{
+        //    new Vector3(1.0f, 0.0f, 1.0f),
+        //    new Vector3(1.0f, 0.0f, FloorSize.y - 2),
+        //    new Vector3(FloorSize.x - 2, 0.0f, 1.0f),
+        //    new Vector3(FloorSize.x - 2, FloorSize.y - 2)
+        //};
 
-        return corners[Random.Range(0, 4)];
+        //return corners[Random.Range(0, 4)];
     }
 
     public int[,] CreateTilemap()
@@ -152,6 +152,7 @@ public class FloorGenerator : MonoBehaviour
             int left = (int)room.Position.x;
             int right = left + (int)room.Size.x - 1;
             
+            //Create walls
             for (int x = 0; x < room.Size.x; x++)
             {
                 tile_map[left + x, top] = 1;
@@ -164,7 +165,8 @@ public class FloorGenerator : MonoBehaviour
                 tile_map[right, top + y] = 1;
             }
 
-            int door_count = Random.Range(1, 4);
+            //Create doors
+            int door_count = Random.Range(1, 3);
 
             for(int i = 0; i < door_count; i++)
             {
@@ -247,5 +249,17 @@ public class FloorGenerator : MonoBehaviour
     public int[,] Tilemap()
     {
         return tileMap;
+    }
+
+    public Vector3 GetRandomFloorPosition()
+    {
+        int x, y;
+        do
+        {
+            x = (int)Random.Range(1, FloorSize.x - 2);
+            y = (int)Random.Range(1, FloorSize.y - 2);
+        } while (tileMap[x, y] != 0);
+
+        return new Vector3(x, 0.0f, y);
     }
 }

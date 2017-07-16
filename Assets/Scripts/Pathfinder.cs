@@ -101,7 +101,17 @@ public class Pathfinder : MonoBehaviour
         PathTile[,] pathTiles = new PathTile[
             currentLevelTiles.GetLength(0),
             currentLevelTiles.GetLength(1)];
-        System.Array.Copy(currentLevelTiles, pathTiles, currentLevelTiles.Length);
+        
+        for(int x = 0; x < currentLevelTiles.GetLength(0); x++)
+        {
+            for(int y = 0; y < currentLevelTiles.GetLength(1); y++)
+            {
+                pathTiles[x, y] = new PathTile(
+                    currentLevelTiles[x, y].TileType,
+                    currentLevelTiles[x, y].X,
+                    currentLevelTiles[x, y].Y);
+            }
+        }
 
         open.Add(pathTiles[(int)start.x, (int)start.z]);
         open[0].SetScore(
@@ -129,19 +139,29 @@ public class Pathfinder : MonoBehaviour
                 if (closed.Contains(tile) || tile.TileType != PathTile.Type.Floor)
                     continue;
 
+                int move_cost = 0;
+
+                if (offset.x != 0 && offset.y != 0)
+                    move_cost = 14;
+                //14 because you want 2 forwards to be more valuable than 2 subsequent
+                //diagonals, but you don't want 3 forwards to have the same priority,
+                //like you'd have with 15 ((15 * 2) == (10 * 3))
+                else
+                    move_cost = 10;
+
                 if (!open.Contains(tile))
                 {
                     open.Add(tile);
                     tile.Parent = lowest_f;
                     tile.SetScore(
-                        lowest_f.G + 10,
+                        lowest_f.G + move_cost,
                         (int)Vector2.Distance(new Vector2(tile.X, tile.Y), end));
                 }
                 else if (lowest_f.G < tile.G)
                 {
                     tile.Parent = lowest_f;
                     tile.SetScore(
-                        lowest_f.G + 10,
+                        lowest_f.G + move_cost,
                         (int)Vector2.Distance(new Vector2(tile.X, tile.Y), end));
                 }
             }
@@ -183,13 +203,14 @@ public class Pathfinder : MonoBehaviour
         currentLevelTiles = tiles;
     }
 
-    private void ResetScores()
+    private void ResetPath()
     {
         for(int x = 0; x < currentLevelTiles.GetLength(0); x++)
         {
             for(int y = 0; y < currentLevelTiles.GetLength(1); y++)
             {
-                currentLevelTiles[x, y].F = 0;
+                currentLevelTiles[x, y].SetScore(0, 0);
+                currentLevelTiles[x, y].Parent = null;
             }
         }
     }

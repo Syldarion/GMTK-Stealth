@@ -16,6 +16,7 @@ public class Player : MonoBehaviour
     {
         Instance = this;
         rBody = GetComponent<Rigidbody>();
+        transform.position = new Vector3(1.0f, 0.0f, 1.0f);
     }
 
     void Start()
@@ -42,35 +43,5 @@ public class Player : MonoBehaviour
         movement *= MoveSpeed * Time.deltaTime;
 
         transform.Translate(movement, Space.World);
-    }
-
-    public void StartPath()
-    {
-        List<Vector3> path = Pathfinder.Instance.FindPath(
-            transform.position,
-            new Vector3(3, transform.position.y, 3));
-        StartCoroutine(MoveAlongPath(path));
-    }
-
-    public IEnumerator MoveAlongPath(List<Vector3> path)
-    {
-        while(path.Count > 0)
-        {
-            Vector3 movement;
-            Vector3 next_point = path[0];
-
-            while(Vector3.Distance(transform.position, next_point) > 0.1f)
-            {
-                movement = (next_point - transform.position).normalized * MoveSpeed * Time.deltaTime;
-                transform.Translate(movement);
-
-                yield return null;
-            }
-
-            transform.position = path[0];
-            path.RemoveAt(0);
-
-            yield return null;
-        }
     }
 }
