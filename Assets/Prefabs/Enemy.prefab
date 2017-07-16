@@ -122,6 +122,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MoveSpeed: 1
-  patrolling: 0
-  alerted: 0
-  returning: 0
+  PatrolSpeed: 1
+  AlertedSpeed: 3

@@ -13,13 +13,18 @@ public class Scanner : MonoBehaviour
     public float ScanGrowthSpeed;
     public float ScanDecaySpeed;
     public bool Scanning;
+    public float ScanTime;
+    public float ScanPingTime;
+    public float ScanPingInterval;
 
     private Camera mainCamera;
     private IsoFollowCamera followCamera;
+    private AudioSource scanSoundSource;
 
     void Awake()
     {
         followCamera = GetComponent<IsoFollowCamera>();
+        scanSoundSource = GetComponent<AudioSource>();
     }
 
     void Start()
@@ -31,18 +36,61 @@ public class Scanner : MonoBehaviour
     {
         if (Input.GetKey(KeyCode.Space))
         {
+            ScanTime += Time.deltaTime;
+            ScanPingTime += Time.deltaTime;
             ScanDistance += ScanGrowthSpeed * Time.deltaTime;
+            if (!Scanning)
+            {
+                scanSoundSource.time = 0.5f;
+                scanSoundSource.Play();
+            }
+            else if (scanSoundSource.time > 9.0f)
+                scanSoundSource.time = 4.0f;
             Scanning = true;
+
+            CheckScanRange();
         }
         else
         {
+            ScanPingTime = 0.0f;
+            ScanTime = Mathf.Clamp(ScanTime - Time.deltaTime, 0.0f, ScanTime);
             ScanDistance -= ScanDecaySpeed * Time.deltaTime;
+            if (Scanning)
+            {
+                scanSoundSource.time = 
+                    scanSoundSource.clip.length - Mathf.Clamp(scanSoundSource.time, 0, 4) + 1.0f;
+            }
             Scanning = false;
         }
 
         ScanDistance = Mathf.Clamp(ScanDistance, MinScanDistance, MaxScanDistance);
         
         followCamera.FollowHeight = 2.0f + (ScanDistance - MinScanDistance) * 1.8f;
+    }
+
+    public void CheckScanRange()
+    {
+        if(ScanPingTime >= ScanPingInterval)
+        {
+            ScanPingTime = 0.0f;
+
+            Collider[] enemies = Physics.OverlapSphere(ScanOrigin, ScanDistance, 8);
+
+            foreach(Collider col in enemies)
+            {
+                Enemy enemy = col.GetComponent<Enemy>();
+                if(enemy.Questioning)
+                {
+                    enemy.Questioning = false;
+                    enemy.Alerted = true;
+                    enemy.Alert(ScanOrigin);
+                }
+                else
+                {
+                    enemy.Questioning = true;
+                }
+            }
+        }
     }
 
     void OnEnable()

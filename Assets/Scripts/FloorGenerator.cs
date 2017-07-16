@@ -104,6 +104,7 @@ public class FloorGenerator : MonoBehaviour
 
     public int Degree;
 
+    private List<BSPRoom> finalRooms;
     private int[,] tileMap;
 
     void Awake()
@@ -142,6 +143,8 @@ public class FloorGenerator : MonoBehaviour
         BSPRoom root_room = new BSPRoom(Vector2.zero, FloorSize, 0);
         List<BSPRoom> rooms = new List<BSPRoom>();
         root_room.Split(Degree, ref rooms);
+
+        finalRooms = new List<BSPRoom>(rooms);
 
         int[,] tile_map = new int[(int)FloorSize.x, (int)FloorSize.y];
 
@@ -246,6 +249,11 @@ public class FloorGenerator : MonoBehaviour
         }
     }
 
+    public List<BSPRoom> Rooms()
+    {
+        return finalRooms;
+    }
+
     public int[,] Tilemap()
     {
         return tileMap;
@@ -258,6 +266,20 @@ public class FloorGenerator : MonoBehaviour
         {
             x = (int)Random.Range(1, FloorSize.x - 2);
             y = (int)Random.Range(1, FloorSize.y - 2);
+        } while (tileMap[x, y] != 0);
+
+        return new Vector3(x, 0.0f, y);
+    }
+
+    public Vector3 GetPointInRoom(int roomIndex)
+    {
+        BSPRoom room = finalRooms[roomIndex];
+
+        int x, y;
+        do
+        {
+            x = (int)(room.Position.x + Random.Range(1, room.Size.x - 1));
+            y = (int)(room.Position.y + Random.Range(1, room.Size.y - 1));
         } while (tileMap[x, y] != 0);
 
         return new Vector3(x, 0.0f, y);

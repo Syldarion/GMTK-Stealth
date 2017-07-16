@@ -4,12 +4,19 @@ using UnityEngine;
 
 public class IsoFollowCamera : MonoBehaviour
 {
+    public static IsoFollowCamera Instance;
+
     public Transform FollowTarget;
     public float FollowDistance;
     public float FollowHeight;
     public float FollowRotation;
     public float TargetRotation;
     public float RotationSpeed;
+
+    void Awake()
+    {
+        Instance = this;
+    }
 
     void Start()
     {

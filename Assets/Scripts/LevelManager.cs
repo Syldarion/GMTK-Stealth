@@ -7,10 +7,17 @@ public class LevelManager : MonoBehaviour
 {
     public static LevelManager Instance;
 
+    public Transform AlertCanvas;
+    public UIAlert AlertPrefab;
+
     public FloorEnd EndPiece;
     public Enemy EnemyPrefab;
     public int MinEnemyCount;
     public int MaxEnemyCount;
+
+    private int spawnRoomIndex;
+    private int exitRoomIndex;
+    private int[] intelIndices;
 
     private List<Enemy> enemies;
 
@@ -36,39 +43,59 @@ public class LevelManager : MonoBehaviour
     {
         FloorGenerator.Instance.CreateFloor();
         Pathfinder.Instance.CreatePathTileMap(FloorGenerator.Instance.Tilemap());
-        Player.Instance.transform.position = new Vector3(1.0f, 1.0f, 1.0f);
 
-        PlaceEndPoint();
-        SpawnEnemies();
-    }
+        int room_count = FloorGenerator.Instance.Rooms().Count;
 
-    public void PlaceEndPoint()
-    {
-        int[,] tile_map = FloorGenerator.Instance.Tilemap();
-        
-        Vector3[] corners = new Vector3[]
+        spawnRoomIndex = Random.Range(0, room_count);
+        do
         {
-            new Vector3(1.0f, 0.25f, tile_map.GetLength(1) - 2),
-            new Vector3(tile_map.GetLength(0) - 2, 0.25f, 1.0f),
-            new Vector3(tile_map.GetLength(0) - 2, 0.25f, tile_map.GetLength(1) - 2)
-        };
+            exitRoomIndex = Random.Range(0, room_count);
+        } while (exitRoomIndex == spawnRoomIndex);
+
+        Player.Instance.transform.position =
+            FloorGenerator.Instance.GetPointInRoom(spawnRoomIndex) + Vector3.up;
+        EndPiece.transform.position =
+            FloorGenerator.Instance.GetPointInRoom(exitRoomIndex) + new Vector3(0.0f, 0.25f, 0.0f);
         
-        EndPiece.transform.position = corners[Random.Range(0, 3)];
+        SpawnEnemies();
     }
 
     public void SpawnEnemies()
     {
         int enemy_count = Random.Range(MinEnemyCount, MaxEnemyCount + 1);
+        int room_count = FloorGenerator.Instance.Rooms().Count;
 
-        for(int i = 0; i < enemy_count; i++)
+        for (int i = 0; i < enemy_count; i++)
         {
             Enemy new_enemy = Instantiate(EnemyPrefab);
-            new_enemy.GeneratePatrolPath();
+
+            int start, end;
+            do
+            {
+                start = Random.Range(0, room_count);
+            } while (start == spawnRoomIndex);
+            do
+            {
+                end = Random.Range(0, room_count);
+            } while (end == spawnRoomIndex);
+
+            new_enemy.GeneratePatrolPath(start, end);
             new_enemy.MoveToStartOfPatrol();
             new_enemy.StartPatrolPath();
 
             enemies.Add(new_enemy);
+
+            UIAlert new_alert = Instantiate(AlertPrefab);
+            new_alert.transform.SetParent(AlertCanvas, false);
+            new_alert.Setup(new_enemy);
         }
+    }
+
+    public void PlaceIntel()
+    {
+        int intel_count = 3;
+
+
     }
 
     public void RestartLevel()

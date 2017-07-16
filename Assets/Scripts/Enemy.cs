@@ -4,7 +4,19 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
+    public enum BehaviorState
+    {
+        Patrolling,
+        Alerted,
+        Returning
+    }
+
     public float MoveSpeed;
+    public float PatrolSpeed;
+    public float AlertedSpeed;
+
+    public bool Questioning;
+    public bool Alerted;
 
     private List<Vector3> patrolPath;
     private int currentPatrolStep;
@@ -14,9 +26,7 @@ public class Enemy : MonoBehaviour
     private int currentReturnStep;
     private Rigidbody rBody;
 
-    public bool patrolling;
-    public bool alerted;
-    public bool returning;
+    private BehaviorState currentState;
 
     void Awake()
     {
@@ -32,12 +42,27 @@ public class Enemy : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.T))
             Alert(Player.Instance.transform.position);
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            Questioning = true;
+            Alerted = false;
+        }
+        else if (Input.GetKeyDown(KeyCode.M))
+        {
+            Questioning = false;
+            Alerted = true;
+        }
+        else if (Input.GetKeyDown(KeyCode.Comma))
+        {
+            Questioning = false;
+            Alerted = false;
+        }
     }
 
-    public void GeneratePatrolPath()
+    public void GeneratePatrolPath(int startRoom, int endRoom)
     {
-        Vector3 start = FloorGenerator.Instance.GetRandomFloorPosition();
-        Vector3 end = FloorGenerator.Instance.GetRandomFloorPosition();
+        Vector3 start = FloorGenerator.Instance.GetPointInRoom(startRoom);
+        Vector3 end = FloorGenerator.Instance.GetPointInRoom(endRoom);
         start.y = 0.25f;
         end.y = 0.25f;
 
@@ -55,16 +80,14 @@ public class Enemy : MonoBehaviour
 
     public void StartPatrolPath()
     {
-        patrolling = true;
+        MoveSpeed = PatrolSpeed;
+        currentState = BehaviorState.Patrolling;
         currentPatrolStep = 0;
         StartCoroutine(MoveAlongPatrolPath());
     }
 
     public void Alert(Vector3 alertPos)
     {
-        patrolling = false;
-        alerted = true;
-
         StopAllCoroutines();
         GenerateAlertPath(alertPos);
         StartAlertPath();
@@ -72,9 +95,6 @@ public class Enemy : MonoBehaviour
 
     public void EndAlert()
     {
-        patrolling = true;
-        alerted = false;
-
         StopAllCoroutines();
         GenerateReturnPath();
         StartReturnPath();
@@ -96,7 +116,8 @@ public class Enemy : MonoBehaviour
 
     public void StartAlertPath()
     {
-        alerted = true;
+        MoveSpeed = AlertedSpeed;
+        currentState = BehaviorState.Alerted;
         currentAlertStep = 0;
         StartCoroutine(MoveAlongAlertPath());
     }
@@ -118,14 +139,15 @@ public class Enemy : MonoBehaviour
 
     public void StartReturnPath()
     {
-        returning = true;
+        MoveSpeed = PatrolSpeed;
+        currentState = BehaviorState.Returning;
         currentReturnStep = 0;
         StartCoroutine(MoveAlongReturnPath());
     }
 
     private IEnumerator MoveAlongPatrolPath()
     {
-        while (patrolling)
+        while (currentState == BehaviorState.Patrolling)
         {
             Vector3 movement;
             Vector3 next_point = patrolPath[currentPatrolStep];
@@ -153,7 +175,7 @@ public class Enemy : MonoBehaviour
 
     private IEnumerator MoveAlongAlertPath()
     {
-        while (alerted)
+        while (currentState == BehaviorState.Alerted)
         {
             Vector3 movement;
             Vector3 next_point = alertedPath[currentAlertStep];
@@ -171,7 +193,6 @@ public class Enemy : MonoBehaviour
 
             if (currentAlertStep == alertedPath.Count)
             {
-                alerted = false;
                 currentAlertStep--;
                 EndAlert();
             }
@@ -182,7 +203,7 @@ public class Enemy : MonoBehaviour
 
     private IEnumerator MoveAlongReturnPath()
     {
-        while (returning)
+        while (currentState == BehaviorState.Returning)
         {
             Vector3 movement;
             Vector3 next_point = returnPath[currentReturnStep];
@@ -200,7 +221,6 @@ public class Enemy : MonoBehaviour
 
             if (currentReturnStep == returnPath.Count)
             {
-                returning = false;
                 StartPatrolPath();
             }
 
