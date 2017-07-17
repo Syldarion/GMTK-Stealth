@@ -7,6 +7,9 @@ public class LevelManager : MonoBehaviour
 {
     public static LevelManager Instance;
 
+    public GameObject SuccessScreen;
+    public GameObject FailScreen;
+
     public Transform AlertCanvas;
     public UIAlert AlertPrefab;
 
@@ -15,11 +18,22 @@ public class LevelManager : MonoBehaviour
     public int MinEnemyCount;
     public int MaxEnemyCount;
 
+    public Crate CratePrefab;
+    public Table TablePrefab;
+    public Intel IntelPrefab;
+
+    public int IntelCollected;
+    public int TotalIntel;
+
+    private int roomCount;
     private int spawnRoomIndex;
     private int exitRoomIndex;
-    private int[] intelIndices;
+    private int[] intelRoomIndices;
+
+    private Vector3 spawnPosition;
 
     private List<Enemy> enemies;
+    private List<Intel> intel;
 
     void Awake()
     {
@@ -29,6 +43,7 @@ public class LevelManager : MonoBehaviour
     void Start()
     {
         enemies = new List<Enemy>();
+        intel = new List<Intel>();
 
         StartNewLevel();
     }
@@ -41,29 +56,33 @@ public class LevelManager : MonoBehaviour
 
     public void StartNewLevel()
     {
+        Player.Instance.gameObject.SetActive(true);
+
         FloorGenerator.Instance.CreateFloor();
+        roomCount = FloorGenerator.Instance.Rooms().Count;
         Pathfinder.Instance.CreatePathTileMap(FloorGenerator.Instance.Tilemap());
 
-        int room_count = FloorGenerator.Instance.Rooms().Count;
-
-        spawnRoomIndex = Random.Range(0, room_count);
+        spawnRoomIndex = Random.Range(0, roomCount);
         do
         {
-            exitRoomIndex = Random.Range(0, room_count);
+            exitRoomIndex = Random.Range(0, roomCount);
         } while (exitRoomIndex == spawnRoomIndex);
 
-        Player.Instance.transform.position =
-            FloorGenerator.Instance.GetPointInRoom(spawnRoomIndex) + Vector3.up;
+        spawnPosition = FloorGenerator.Instance.GetPointInRoom(spawnRoomIndex) + Vector3.up;
+
+        Player.Instance.transform.position = spawnPosition;
         EndPiece.transform.position =
             FloorGenerator.Instance.GetPointInRoom(exitRoomIndex) + new Vector3(0.0f, 0.25f, 0.0f);
+        EndPiece.gameObject.SetActive(false);
         
         SpawnEnemies();
+        PlaceIntel();
+        PlaceCrates();
     }
 
     public void SpawnEnemies()
     {
         int enemy_count = Random.Range(MinEnemyCount, MaxEnemyCount + 1);
-        int room_count = FloorGenerator.Instance.Rooms().Count;
 
         for (int i = 0; i < enemy_count; i++)
         {
@@ -72,11 +91,11 @@ public class LevelManager : MonoBehaviour
             int start, end;
             do
             {
-                start = Random.Range(0, room_count);
+                start = Random.Range(0, roomCount);
             } while (start == spawnRoomIndex);
             do
             {
-                end = Random.Range(0, room_count);
+                end = Random.Range(0, roomCount);
             } while (end == spawnRoomIndex);
 
             new_enemy.GeneratePatrolPath(start, end);
@@ -93,27 +112,136 @@ public class LevelManager : MonoBehaviour
 
     public void PlaceIntel()
     {
-        int intel_count = 3;
+        IntelCollected = 0;
+        TotalIntel = 3;
+        
+        intelRoomIndices = new int[TotalIntel];
 
+        for(int i = 0; i < TotalIntel; i++)
+        {
+            do
+            {
+                intelRoomIndices[i] = Random.Range(0, roomCount);
+            } while (intelRoomIndices[i] == spawnRoomIndex || intelRoomIndices[i] == exitRoomIndex);
 
+            Table new_table = Instantiate(TablePrefab);
+            new_table.transform.position =
+                FloorGenerator.Instance.GetPointInRoom(intelRoomIndices[i]) +
+                new Vector3(0.0f, 0.25f, 0.0f);
+            
+            Intel new_intel = Instantiate(IntelPrefab);
+            new_intel.transform.position = new_table.transform.position + 
+                new Vector3(0.0f, 0.25f, 0.0f);
+
+            intel.Add(new_intel);
+        }
+    }
+
+    public void PlaceCrates()
+    {
+        for(int i = 0; i < roomCount; i++)
+        {
+            if (i == spawnRoomIndex) continue;
+
+            int crate_count = Random.Range(0, 4);
+
+            for(int j = 0; j < crate_count; j++)
+            {
+                Crate new_crate = Instantiate(CratePrefab);
+                new_crate.transform.position =
+                    FloorGenerator.Instance.GetPointInRoom(i) +
+                    new Vector3(0.0f, 0.25f, 0.0f);
+            }
+        }
+    }
+
+    public void CollectIntel()
+    {
+        IntelCollected++;
+        InfoUI.Instance.IntelInfoText.text =
+            string.Format("Intel: {0} / {1}", IntelCollected, TotalIntel);
+        if (IntelCollected >= TotalIntel)
+        {
+            EndPiece.gameObject.SetActive(true);
+        }
     }
 
     public void RestartLevel()
     {
-        Player.Instance.transform.position = new Vector3(1.0f, 1.0f, 1.0f);
+        Player.Instance.gameObject.SetActive(true);
+
+        Player.Instance.transform.position = spawnPosition;
         
         foreach(Enemy enemy in enemies)
         {
+            enemy.Questioning = false;
+            enemy.Alerted = false;
+
             enemy.StopAllCoroutines();
             enemy.MoveToStartOfPatrol();
             enemy.StartPatrolPath();
         }
+
+        foreach(Intel intelObj in intel)
+        {
+            intelObj.Reset();
+        }
+
+        IntelCollected = 0;
+        InfoUI.Instance.IntelInfoText.text =
+            string.Format("Intel: {0} / {1}", IntelCollected, TotalIntel);
     }
 
     public void CompleteLevel()
     {
         FloorGenerator.Instance.CleanupFloor();
 
-        StartNewLevel();
+        foreach(Enemy enemy in enemies)
+        {
+            Destroy(enemy.gameObject);
+        }
+
+        foreach(Intel intelObj in intel)
+        {
+            Destroy(intelObj.gameObject);
+        }
+
+        IntelCollected = 0;
+        InfoUI.Instance.IntelInfoText.text =
+            string.Format("Intel: {0} / {1}", IntelCollected, TotalIntel);
+
+        Player.Instance.gameObject.SetActive(false);
+        ShowSuccessScreen();
+    }
+
+    public void FailLevel()
+    {
+        Player.Instance.gameObject.SetActive(false);
+        ShowFailScreen();
+    }
+
+    public void ShowSuccessScreen()
+    {
+        SuccessScreen.gameObject.SetActive(true);
+    }
+
+    public void HideSuccessScreen()
+    {
+        SuccessScreen.gameObject.SetActive(false);
+    }
+
+    public void ShowFailScreen()
+    {
+        FailScreen.gameObject.SetActive(true);
+    }
+
+    public void HideFailScreen()
+    {
+        FailScreen.gameObject.SetActive(false);
+    }
+
+    public void ExitGame()
+    {
+        Application.Quit();
     }
 }

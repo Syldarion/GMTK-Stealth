@@ -34,18 +34,16 @@ public class Scanner : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.Space))
+        if (Input.GetKey(KeyCode.Space) && !Player.Instance.Hiding)
         {
             ScanTime += Time.deltaTime;
             ScanPingTime += Time.deltaTime;
             ScanDistance += ScanGrowthSpeed * Time.deltaTime;
             if (!Scanning)
             {
-                scanSoundSource.time = 0.5f;
+                scanSoundSource.loop = true;
                 scanSoundSource.Play();
             }
-            else if (scanSoundSource.time > 9.0f)
-                scanSoundSource.time = 4.0f;
             Scanning = true;
 
             CheckScanRange();
@@ -57,15 +55,14 @@ public class Scanner : MonoBehaviour
             ScanDistance -= ScanDecaySpeed * Time.deltaTime;
             if (Scanning)
             {
-                scanSoundSource.time = 
-                    scanSoundSource.clip.length - Mathf.Clamp(scanSoundSource.time, 0, 4) + 1.0f;
+                scanSoundSource.loop = false;
             }
             Scanning = false;
         }
 
         ScanDistance = Mathf.Clamp(ScanDistance, MinScanDistance, MaxScanDistance);
         
-        followCamera.FollowHeight = 2.0f + (ScanDistance - MinScanDistance) * 1.8f;
+        followCamera.FollowHeight = 4.0f + (ScanDistance - MinScanDistance) * 1.8f;
     }
 
     public void CheckScanRange()
@@ -74,20 +71,18 @@ public class Scanner : MonoBehaviour
         {
             ScanPingTime = 0.0f;
 
-            Collider[] enemies = Physics.OverlapSphere(ScanOrigin, ScanDistance, 8);
+            Collider[] enemies = Physics.OverlapSphere(ScanOrigin, ScanDistance, 1 << 8);
 
             foreach(Collider col in enemies)
             {
                 Enemy enemy = col.GetComponent<Enemy>();
                 if(enemy.Questioning)
                 {
-                    enemy.Questioning = false;
-                    enemy.Alerted = true;
                     enemy.Alert(ScanOrigin);
                 }
-                else
+                else if(!enemy.Alerted)
                 {
-                    enemy.Questioning = true;
+                    enemy.Question();
                 }
             }
         }
@@ -104,7 +99,8 @@ public class Scanner : MonoBehaviour
     {
         EffectMaterial.SetVector("_WorldSpaceScannerPos", ScanOrigin);
         EffectMaterial.SetFloat("_ScanDistance", ScanDistance);
-        EffectMaterial.SetFloat("_ScanlineBoldness", Scanning ? 0.8f : 0.1f);
+        EffectMaterial.SetFloat("_ScanlineBoldness", 
+            Player.Instance.Hiding ? 0.0f : Scanning ? 0.8f : 0.1f);
         RaycastCornerBlit(source, destination, EffectMaterial);
     }
 

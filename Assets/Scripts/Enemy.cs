@@ -10,11 +10,14 @@ public class Enemy : MonoBehaviour
         Alerted,
         Returning
     }
-
+    
     public float MoveSpeed;
     public float PatrolSpeed;
     public float AlertedSpeed;
+    public float AlertWaitTime;
+    public float SightRadius;
 
+    public float QuestionResetTime;
     public bool Questioning;
     public bool Alerted;
 
@@ -40,22 +43,25 @@ public class Enemy : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.T))
-            Alert(Player.Instance.transform.position);
-        if (Input.GetKeyDown(KeyCode.N))
+        CheckSight();
+    }
+
+    public void CheckSight()
+    {
+        Collider[] colliders = Physics.OverlapSphere(transform.position, SightRadius);
+        foreach(Collider col in colliders)
         {
-            Questioning = true;
-            Alerted = false;
-        }
-        else if (Input.GetKeyDown(KeyCode.M))
-        {
-            Questioning = false;
-            Alerted = true;
-        }
-        else if (Input.GetKeyDown(KeyCode.Comma))
-        {
-            Questioning = false;
-            Alerted = false;
+            if(col.tag == "Player")
+            {
+                RaycastHit hit;
+                Physics.Raycast(
+                    transform.position,
+                    (col.transform.position - transform.position).normalized,
+                    out hit,
+                    SightRadius);
+                if (hit.collider == col && !col.GetComponent<Player>().Hiding)
+                    LevelManager.Instance.FailLevel();
+            }
         }
     }
 
@@ -65,12 +71,7 @@ public class Enemy : MonoBehaviour
         Vector3 end = FloorGenerator.Instance.GetPointInRoom(endRoom);
         start.y = 0.25f;
         end.y = 0.25f;
-
-        Debug.Log(string.Format("patrol start: {0}, end: {1}", start, end));
-
         patrolPath = Pathfinder.Instance.FindPath(start, end);
-
-        Debug.Log(patrolPath.Count);
     }
 
     public void MoveToStartOfPatrol()
@@ -86,8 +87,28 @@ public class Enemy : MonoBehaviour
         StartCoroutine(MoveAlongPatrolPath());
     }
 
+    public void Question()
+    {
+        Questioning = true;
+        StartCoroutine(QuestionTimer());
+    }
+
+    IEnumerator QuestionTimer()
+    {
+        float timer = 0.0f;
+        while(timer < QuestionResetTime)
+        {
+            timer += Time.deltaTime;
+            yield return null;
+        }
+        Questioning = false;
+    }
+
     public void Alert(Vector3 alertPos)
     {
+        Questioning = false;
+        Alerted = true;
+
         StopAllCoroutines();
         GenerateAlertPath(alertPos);
         StartAlertPath();
@@ -95,6 +116,9 @@ public class Enemy : MonoBehaviour
 
     public void EndAlert()
     {
+        Alerted = false;
+        Questioning = false;
+
         StopAllCoroutines();
         GenerateReturnPath();
         StartReturnPath();
@@ -103,15 +127,9 @@ public class Enemy : MonoBehaviour
     public void GenerateAlertPath(Vector3 alertPos)
     {
         Vector3 start = patrolPath[currentPatrolStep];
-
         start.y = 0.25f;
         alertPos.y = 0.25f;
-
-        Debug.Log(string.Format("alert start: {0}, end: {1}", start, alertPos));
-
         alertedPath = Pathfinder.Instance.FindPath(start, alertPos);
-
-        Debug.Log(alertedPath.Count);
     }
 
     public void StartAlertPath()
@@ -126,15 +144,9 @@ public class Enemy : MonoBehaviour
     {
         Vector3 start = alertedPath[currentAlertStep];
         Vector3 end = patrolPath[0];
-
         start.y = 0.25f;
         end.y = 0.25f;
-
-        Debug.Log(string.Format("return start: {0}, end: {1}", start, end));
-
         returnPath = Pathfinder.Instance.FindPath(start, end);
-
-        Debug.Log(returnPath.Count);
     }
 
     public void StartReturnPath()
@@ -194,6 +206,7 @@ public class Enemy : MonoBehaviour
             if (currentAlertStep == alertedPath.Count)
             {
                 currentAlertStep--;
+                yield return new WaitForSeconds(AlertWaitTime);
                 EndAlert();
             }
 
