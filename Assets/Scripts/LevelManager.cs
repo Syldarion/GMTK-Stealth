@@ -190,6 +190,8 @@ public class LevelManager : MonoBehaviour
         IntelCollected = 0;
         InfoUI.Instance.IntelInfoText.text =
             string.Format("Intel: {0} / {1}", IntelCollected, TotalIntel);
+
+        EndPiece.gameObject.SetActive(false);
     }
 
     public void CompleteLevel()
