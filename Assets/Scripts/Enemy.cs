@@ -161,18 +161,22 @@ public class Enemy : MonoBehaviour
     {
         while (currentState == BehaviorState.Patrolling)
         {
-            Vector3 movement;
+            Vector3 start = transform.position;
             Vector3 next_point = patrolPath[currentPatrolStep];
 
-            while(Vector3.Distance(transform.position, next_point) > 0.1f)
-            {
-                movement = (next_point - transform.position).normalized * MoveSpeed * Time.deltaTime;
-                transform.Translate(movement);
+            float progress = 0.0f;
 
+            while(progress < 1.0f)
+            {
+                transform.position = Vector3.Lerp(
+                    start,
+                    next_point,
+                    progress);
+                
+                progress += MoveSpeed * Time.deltaTime;
                 yield return null;
             }
-
-            transform.position = next_point;
+            
             currentPatrolStep++;
 
             if (currentPatrolStep == patrolPath.Count)
@@ -189,18 +193,22 @@ public class Enemy : MonoBehaviour
     {
         while (currentState == BehaviorState.Alerted)
         {
-            Vector3 movement;
+            Vector3 start = transform.position;
             Vector3 next_point = alertedPath[currentAlertStep];
 
-            while (Vector3.Distance(transform.position, next_point) > 0.1f)
-            {
-                movement = (next_point - transform.position).normalized * MoveSpeed * Time.deltaTime;
-                transform.Translate(movement);
+            float progress = 0.0f;
 
+            while (progress < 1.0f)
+            {
+                transform.position = Vector3.Lerp(
+                    start,
+                    next_point,
+                    progress);
+
+                progress += MoveSpeed * Time.deltaTime;
                 yield return null;
             }
-
-            transform.position = next_point;
+            
             currentAlertStep++;
 
             if (currentAlertStep == alertedPath.Count)
@@ -218,18 +226,22 @@ public class Enemy : MonoBehaviour
     {
         while (currentState == BehaviorState.Returning)
         {
-            Vector3 movement;
+            Vector3 start = transform.position;
             Vector3 next_point = returnPath[currentReturnStep];
 
-            while (Vector3.Distance(transform.position, next_point) > 0.1f)
-            {
-                movement = (next_point - transform.position).normalized * MoveSpeed * Time.deltaTime;
-                transform.Translate(movement);
+            float progress = 0.0f;
 
+            while (progress < 1.0f)
+            {
+                transform.position = Vector3.Lerp(
+                    start,
+                    next_point,
+                    progress);
+
+                progress += MoveSpeed * Time.deltaTime;
                 yield return null;
             }
-
-            transform.position = next_point;
+            
             currentReturnStep++;
 
             if (currentReturnStep == returnPath.Count)

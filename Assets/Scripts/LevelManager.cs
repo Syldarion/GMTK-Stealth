@@ -96,7 +96,7 @@ public class LevelManager : MonoBehaviour
             do
             {
                 end = Random.Range(0, roomCount);
-            } while (end == spawnRoomIndex);
+            } while (end == spawnRoomIndex || end == start);
 
             new_enemy.GeneratePatrolPath(start, end);
             new_enemy.MoveToStartOfPatrol();
@@ -127,11 +127,11 @@ public class LevelManager : MonoBehaviour
             Table new_table = Instantiate(TablePrefab);
             new_table.transform.position =
                 FloorGenerator.Instance.GetPointInRoom(intelRoomIndices[i]) +
-                new Vector3(0.0f, 0.25f, 0.0f);
+                new Vector3(0.0f, 0.15f, 0.0f);
             
             Intel new_intel = Instantiate(IntelPrefab);
             new_intel.transform.position = new_table.transform.position + 
-                new Vector3(0.0f, 0.25f, 0.0f);
+                new Vector3(0.0f, 0.2f, 0.0f);
 
             intel.Add(new_intel);
         }
@@ -143,7 +143,7 @@ public class LevelManager : MonoBehaviour
         {
             if (i == spawnRoomIndex) continue;
 
-            int crate_count = Random.Range(0, 4);
+            int crate_count = Random.Range(0, 3);
 
             for(int j = 0; j < crate_count; j++)
             {
@@ -242,6 +242,10 @@ public class LevelManager : MonoBehaviour
 
     public void ExitGame()
     {
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #else
         Application.Quit();
+        #endif
     }
 }
