@@ -55,7 +55,8 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-        Movement();
+        if (!Hiding)
+            Movement();
         SightScanner.ScanOrigin = Hiding ? HiddenPosition : transform.position;
 
         CheckForInteractables();
@@ -106,7 +107,7 @@ public class Player : MonoBehaviour
             Input.GetAxis("Vertical"));
 
         movement *= MoveSpeed * Time.deltaTime;
-
+        
         transform.Translate(movement, Space.World);
     }
 
