@@ -4652,7 +4652,7 @@ MonoBehaviour:
   MinScanDistance: 2
   MaxScanDistance: 100
   ScanGrowthSpeed: 2
-  ScanDecaySpeed: 50
+  ScanDecaySpeed: 30
   Scanning: 0
   ScanTime: 0
   ScanPingTime: 0

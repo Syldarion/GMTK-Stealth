@@ -21,6 +21,7 @@ public class Enemy : MonoBehaviour
     public bool Questioning;
     public bool Alerted;
 
+    private bool sighted;
     private float sightedDuration;
 
     private List<Vector3> patrolPath;
@@ -46,7 +47,11 @@ public class Enemy : MonoBehaviour
     void Update()
     {
         CheckSight();
-        if(sightedDuration > 1.0f)
+        if (sighted)
+            sightedDuration += Time.deltaTime;
+        else
+            sightedDuration = 0.0f;
+        if(sightedDuration > 0.5f)
         {
             LevelManager.Instance.FailLevel();
             sightedDuration = 0.0f;
@@ -66,8 +71,7 @@ public class Enemy : MonoBehaviour
                     (col.transform.position - transform.position).normalized,
                     out hit,
                     SightRadius);
-                if (hit.collider == col && !col.GetComponent<Player>().Hiding)
-                    sightedDuration += Time.deltaTime;
+                sighted = hit.collider == col && !col.GetComponent<Player>().Hiding;
             }
         }
     }

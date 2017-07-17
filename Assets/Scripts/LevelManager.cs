@@ -33,6 +33,7 @@ public class LevelManager : MonoBehaviour
     private Vector3 spawnPosition;
 
     private List<Enemy> enemies;
+    private List<Table> tables;
     private List<Intel> intel;
 
     void Awake()
@@ -128,7 +129,9 @@ public class LevelManager : MonoBehaviour
             new_table.transform.position =
                 FloorGenerator.Instance.GetPointInRoom(intelRoomIndices[i]) +
                 new Vector3(0.0f, 0.15f, 0.0f);
-            
+
+            tables.Add(new_table);
+
             Intel new_intel = Instantiate(IntelPrefab);
             new_intel.transform.position = new_table.transform.position + 
                 new Vector3(0.0f, 0.2f, 0.0f);
@@ -203,10 +206,19 @@ public class LevelManager : MonoBehaviour
             Destroy(enemy.gameObject);
         }
 
+        foreach(Table table in tables)
+        {
+            Destroy(table.gameObject);
+        }
+
         foreach(Intel intelObj in intel)
         {
             Destroy(intelObj.gameObject);
         }
+
+        enemies.Clear();
+        tables.Clear();
+        intel.Clear();
 
         IntelCollected = 0;
         InfoUI.Instance.IntelInfoText.text =
