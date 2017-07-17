@@ -35,6 +35,7 @@ public class LevelManager : MonoBehaviour
     private List<Enemy> enemies;
     private List<Table> tables;
     private List<Intel> intel;
+    private List<UIAlert> alerts;
 
     void Awake()
     {
@@ -44,7 +45,9 @@ public class LevelManager : MonoBehaviour
     void Start()
     {
         enemies = new List<Enemy>();
+        tables = new List<Table>();
         intel = new List<Intel>();
+        alerts = new List<UIAlert>();
 
         StartNewLevel();
     }
@@ -108,6 +111,8 @@ public class LevelManager : MonoBehaviour
             UIAlert new_alert = Instantiate(AlertPrefab);
             new_alert.transform.SetParent(AlertCanvas, false);
             new_alert.Setup(new_enemy);
+
+            alerts.Add(new_alert);
         }
     }
 
@@ -179,6 +184,8 @@ public class LevelManager : MonoBehaviour
         {
             enemy.Questioning = false;
             enemy.Alerted = false;
+            enemy.Sighted = false;
+            enemy.SightedDuration = 0.0f;
 
             enemy.StopAllCoroutines();
             enemy.MoveToStartOfPatrol();
@@ -200,6 +207,11 @@ public class LevelManager : MonoBehaviour
     public void CompleteLevel()
     {
         FloorGenerator.Instance.CleanupFloor();
+
+        foreach(UIAlert alert in alerts)
+        {
+            Destroy(alert.gameObject);
+        }
 
         foreach(Enemy enemy in enemies)
         {
